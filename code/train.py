@@ -5,7 +5,9 @@ from keras.models import Sequential
 from keras.layers import Flatten, Dense
 import cv2
 from sklearn.model_selection import train_test_split
+
 from model import *
+from data import *
 
 # read in the data
 data = pd.read_csv("../../BehaviorSample/driving_log.csv")
