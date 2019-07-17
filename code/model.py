@@ -1,6 +1,7 @@
 
 from keras.models import Sequential
 from keras.layers import Flatten, Dense, Lambda, Conv2D, Dropout
+import tensorflow as tf
 
 def dave2Model(loss='mse', optimizer='adam'):
     model = Sequential()

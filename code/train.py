@@ -23,12 +23,16 @@ newImagePaths = []
 for imgPath in imagePaths:
     newImgPath = "../../BehaviorSample/IMG/" + imgPath.split('/')[1]
     newImagePaths.append(newImgPath)
-X_train, X_test, y_train, y_test = train_test_split(
-    newImagePaths, labels, test_size=0.2)
 
-training_generator = DataGenerator(X_train, y_train, 128)
-validation_generator = DataGenerator(X_test, y_test, 128)
+# X_train, X_test, y_train, y_test = train_test_split(
+#     newImagePaths, labels, test_size=0.2)
 
+data_train, data_test = train_test_split(data, test_size=0.2, shuffle=True)
+
+batch_size = 129
+
+training_generator = DataGeneratorInPlace(data_train, batch_size, 0.2)
+validation_generator = DataGeneratorInPlace(data_test, batch_size, 0.2)
 
 print("Training...")
 
@@ -38,13 +42,13 @@ print(model.summary())
 
 # train
 model.compile(loss='mse', optimizer='adam')
-# model.fit(x_train, y_train, validation_split=0.2, shuffle=True, epochs=7)
+
 model.fit_generator(generator=training_generator,
                     validation_data=validation_generator,
-                    validation_steps=(len(X_test) // 128),
+                    validation_steps=(len(data_test) // batch_size),
                     use_multiprocessing=True,
-                    steps_per_epoch=(len(imagePaths) // 128),
-                    workers=2,
+                    steps_per_epoch=(len(imagePaths) // batch_size),
+                    workers=6,
                     epochs=1)
 
 model.save('model.h5')
