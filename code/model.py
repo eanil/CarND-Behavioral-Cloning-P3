@@ -6,7 +6,7 @@ import tensorflow as tf
 def dave2Model(loss='mse', optimizer='adam'):
     model = Sequential()
 
-    model.add(Lambda(lambda x:  (x / 127.5) - 1., input_shape=(160, 320, 3)))
+    model.add(Lambda(lambda x:  (x / 127.5) - 1., input_shape=(66, 200, 3)))
     model.add(Conv2D(filters=24, kernel_size=5,
                      strides=(2, 2), activation='relu'))
     model.add(Conv2D(filters=36, kernel_size=5,

@@ -2,53 +2,13 @@ from keras.utils import Sequence
 import cv2
 import numpy as np
 import tensorflow as tf
+import matplotlib.image as mpimg
 
+def crop(image):
+    return image[60:130, :]
 
-def bgr2rgb(image):
-    return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
-
-def flipimg(image):
-    return cv2.flip(image, 1)
-
-
-def cropimg(image):
-    cropped = image[60:130, :]
-    return cropped
-
-
-def resize(image, shape=(160, 70)):
+def resize(image, shape=(200, 66)):
     return cv2.resize(image, shape)
-
-
-def crop_and_resize(image):
-    cropped = cropimg(image)
-    resized = resize(cropped)
-    return resized
-
-
-class DataGenerator(Sequence):
-    def __init__(self, x_set, y_set, batch_size):
-        '''
-        x_set: Filenames of the images we want to use.
-        y_set: Target values
-        batch_size:
-        '''
-        self.x, self.y = x_set, y_set
-        self.batch_size = batch_size
-
-    def __len__(self):
-        'Number of batches per epoch'
-        return int(np.ceil(len(self.x) / float(self.batch_size)))
-
-    def __getitem__(self, idx):
-        'Returns the batch.'
-        batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
-        batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
-
-        return np.array([cv2.imread(file_name) for file_name in batch_x]), \
-            np.array(batch_y)
-
 
 class DataGeneratorInPlace(Sequence):
     def __init__(self, data, batch_size, steering_correction):
@@ -68,11 +28,11 @@ class DataGeneratorInPlace(Sequence):
         This assumes that the data has the following columns:
         ['center', 'left', 'right', 'steering']
         '''
-        # assert (batch_size % 8 == 0), 'Choose a batch size divisible by 8'
+        assert (batch_size % 6 == 0), 'Choose a batch size divisible by 6'
 
         self.data = data
         self.batch_size = batch_size
-        self.batch_rows = int(batch_size / 3)  # / 8
+        self.batch_rows = int(batch_size / 6)
         self.angle_correction = 0.2
 
     def __len__(self):
@@ -83,11 +43,6 @@ class DataGeneratorInPlace(Sequence):
         'Returns the batch'
         batch = self.data[idx * self.batch_rows:(idx + 1) * self.batch_rows]
 
-        # We will make this many augmented images
-        # because each row contributes 3 data points.
-        aug_size = self.batch_size - self.batch_rows * 3
-
-        # imagePaths = np.array(batch["center"])
         imagePaths = np.hstack(
             (batch['center'], batch['right'], batch['left'])).tolist()
         center_angles = np.array(batch["steering"]).astype(float)
@@ -98,9 +53,13 @@ class DataGeneratorInPlace(Sequence):
         def fullPath(imgPath): return "../../BehaviorSample/IMG/" + \
             imgPath.split('/')[1]
 
-        images = [cv2.imread(fullPath(file_name))
+        images = [resize(crop(mpimg.imread(fullPath(file_name))))
                   for file_name in imagePaths]
 
-        # flip the images
+        # Flip the images
+        imagesFlipped = [np.fliplr(img) for img in images]
+
+        images = np.concatenate((images, imagesFlipped))
+        angles = np.concatenate((angles, -1.0 * np.array(angles)))
 
         return np.array(images), np.array(angles)
