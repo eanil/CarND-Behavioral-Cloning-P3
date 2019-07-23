@@ -15,6 +15,7 @@ from io import BytesIO
 from keras.models import load_model
 import h5py
 from keras import __version__ as keras_version
+import cv2
 
 sio = socketio.Server()
 app = Flask(__name__)
@@ -44,9 +45,15 @@ class SimplePIController:
 
 
 controller = SimplePIController(0.1, 0.002)
-set_speed = 9
+set_speed = 20
 controller.set_desired(set_speed)
 
+def resize(image, shape=(200, 66)):
+    'I will use resized images for inference.'
+    return cv2.resize(image, shape)
+
+def crop(image):
+    return image[60:130, :]
 
 @sio.on('telemetry')
 def telemetry(sid, data):
@@ -60,7 +67,11 @@ def telemetry(sid, data):
         # The current image from the center camera of the car
         imgString = data["image"]
         image = Image.open(BytesIO(base64.b64decode(imgString)))
+
+        # Because I want to work with cropped and resized images
         image_array = np.asarray(image)
+        image_array = resize(crop(image_array))
+
         steering_angle = float(model.predict(image_array[None, :, :, :], batch_size=1))
 
         throttle = controller.update(float(speed))
